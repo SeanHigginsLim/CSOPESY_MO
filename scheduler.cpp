@@ -3,13 +3,12 @@
 #include <iomanip>
 #include <chrono>
 #include <thread>
+#include <algorithm>
 
 std::mutex consoleMutex;
 std::mutex processMutex;
 std::atomic<bool> schedulerRunning(false);
 FCFSScheduler scheduler;
-
-// Global CPU tick counter
 std::atomic<int> cpuTickCount(0);
 
 FCFSScheduler::FCFSScheduler(int cores) : coreCount(cores) {
@@ -19,6 +18,35 @@ FCFSScheduler::FCFSScheduler(int cores) : coreCount(cores) {
 void FCFSScheduler::addProcess(Process* p) {
     std::lock_guard<std::mutex> lock(processMutex);
     readyQueue.push(p);
+}
+
+Process* FCFSScheduler::findProcess(const std::string& name) {
+    std::lock_guard<std::mutex> lock(processMutex);
+
+    for (auto* p : runningProcesses) {
+        if (p && p->name == name) return p;
+    }
+
+    std::queue<Process*> tempQueue = readyQueue;
+    while (!tempQueue.empty()) {
+        Process* p = tempQueue.front();
+        tempQueue.pop();
+        if (p && p->name == name) return p;
+    }
+
+    for (auto* p : finishedProcesses) {
+        if (p && p->name == name) return p;
+    }
+
+    return nullptr;
+}
+
+const std::vector<Process*>& FCFSScheduler::getRunningProcesses() const {
+    return runningProcesses;
+}
+
+const std::vector<Process*>& FCFSScheduler::getFinishedProcesses() const {
+    return finishedProcesses;
 }
 
 void FCFSScheduler::start() {
@@ -34,10 +62,12 @@ void FCFSScheduler::stop() {
         if (t.joinable()) t.join();
     }
 
-    for (auto* p : finishedProcesses) delete p;
+    for (auto* p : finishedProcesses) {
+        delete p;
+    }
+    finishedProcesses.clear();
 }
 
-// Scheduler thread
 void FCFSScheduler::workerThread(int coreId) {
     while (schedulerRunning) {
         Process* p = nullptr;
@@ -54,7 +84,6 @@ void FCFSScheduler::workerThread(int coreId) {
 
         if (p) {
             while (!p->isFinished && schedulerRunning) {
-                // Simulate a CPU tick every 150ms
                 std::this_thread::sleep_for(std::chrono::milliseconds(150));
                 cpuTickCount++;
 
@@ -66,7 +95,6 @@ void FCFSScheduler::workerThread(int coreId) {
                 p->executePrint(coreId, cpuTickCount.load());
             }
 
-            // Mark process as finished and clean up
             {
                 std::lock_guard<std::mutex> lock(processMutex);
                 runningProcesses[coreId] = nullptr;
@@ -89,9 +117,9 @@ void FCFSScheduler::printStatus() {
         if (p) {
             anyRunning = true;
             std::cout << std::left << std::setw(12) << p->name
-                << " (" << p->timestamp << ")"
-                << "   Core: " << i
-                << "   " << p->currentLine << " / " << p->totalLines << "\n";
+                      << " (" << p->timestamp << ")"
+                      << "   Core: " << i
+                      << "   " << p->currentLine << " / " << p->totalLines << "\n";
         }
     }
     if (!anyRunning) {
@@ -104,12 +132,11 @@ void FCFSScheduler::printStatus() {
     } else {
         for (auto* p : finishedProcesses) {
             std::cout << std::left << std::setw(12) << p->name
-                << " (" << p->timestamp << ")"
-                << "   Finished"
-                << "   " << p->totalLines << " / " << p->totalLines << "\n";
+                      << " (" << p->timestamp << ")"
+                      << "   Finished"
+                      << "   " << p->totalLines << " / " << p->totalLines << "\n";
         }
     }
-    
-    // std::cout << "\nTotal CPU Ticks: " << cpuTickCount.load() << "\n";
+
     std::cout << "----------------------------------------------------\n";
 }

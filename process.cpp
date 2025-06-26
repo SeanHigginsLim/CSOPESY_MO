@@ -154,18 +154,25 @@ void Process::executePrint(int core, int tick) {
         std::regex withVar(R"(PRINT\(\"([^\"]*)\"\s*\+\s*([^)]+)\))");
         std::regex justMsg(R"(PRINT\(\"([^\"]*)\"\))");
 
+        std::string logEntry;
+
         if (std::regex_match(cmd, match, withVar)) {
             std::string msg = match[1];
             std::string var = match[2];
             int val = varManager.getValue(var);
-            logFile << "(" << timestamp << ") Core:" << core
-                << " \"" << msg << val << " from " << name << "\"\n";
-            logFile.flush();
+            logEntry = "(" + timestamp + ") Core:" + std::to_string(core) + " \"" + msg + std::to_string(val) + " from " + name + "\"";
         } else if (std::regex_match(cmd, match, justMsg)) {
             std::string msg = match[1];
-            logFile << "(" << timestamp << ") Core:" << core
-                << " \"" << msg << " from " << name << "\"\n";
+            logEntry = "(" + timestamp + ") Core:" + std::to_string(core) + " \"" + msg + " from " + name + "\"";
+        }
+
+        if (!logEntry.empty()) {
+            logFile << logEntry << "\n";
             logFile.flush();
+
+            // NEW: Save to in-memory log list
+            logs.push_back(logEntry);
+            if (logs.size() > MAX_LOGS) logs.pop_front();
         }
     } else if (cmd.rfind("DECLARE(", 0) == 0) {
         std::smatch match;

@@ -16,6 +16,10 @@ struct Process {
     bool isFinished;
     std::ofstream logFile;
 
+    // NEW: Store log entries in memory for screen display
+    std::deque<std::string> logs;      // Show recent logs
+    static const size_t MAX_LOGS = 10; // Only keep last 10
+
     // Sleep state
     bool sleeping = false;
     int sleepTicksRemaining = 0;
