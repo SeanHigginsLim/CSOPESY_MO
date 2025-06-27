@@ -1,4 +1,5 @@
 #include "console.h"
+#include "config.h"
 #include "scheduler.h"
 #include "variable_manager.h"
 #include "process.h"
@@ -50,11 +51,16 @@ void enterProcessScreen(Process* process) {
 
 // Main command interpreter
 void verifyCommand(const std::string& input) {
-    if (input == "initialize") {
-        std::cout << "Initializing..." << std::endl;
-        // Console::initializeFromConfig(); // Reads config.txt
+    if (!systemConfig.initialized) {
+        if (input == "initialize") {
+            Console::initializeFromConfig();
+        } else {
+            std::cout << "Please run 'initialize' first.\n";
+        }
+        return;
+    }
         
-    } else if (input.rfind("screen -s", 0) == 0) {
+   if (input.rfind("screen -s", 0) == 0) {
         std::string processName = input.substr(10);
         Process* process = scheduler.findProcess(processName);
 

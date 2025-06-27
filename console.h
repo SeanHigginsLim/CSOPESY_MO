@@ -9,6 +9,7 @@ public:
     static void printHeader();              // Prints the command line header
     static std::string acceptCommand();     // Accepts user command
     static void initializeTestProcesses();  // Runs the test processes
+    static void initializeFromConfig(); 
 };
 
 #endif
