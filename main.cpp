@@ -89,6 +89,9 @@ void verifyCommand(const std::string& input) {
     } else if (input == "scheduler-stop") {
         std::cout << "Stopping scheduler..." << std::endl;
         scheduler.stop();
+        
+    } else if (input == "report-util") {
+    scheduler.saveStatusToFile("C:/csopesy-log.txt");
 
     } else if (input == "clear") {
         #ifdef _WIN32
