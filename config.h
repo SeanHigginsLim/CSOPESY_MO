@@ -17,6 +17,4 @@ struct SystemConfig {
 
 extern SystemConfig systemConfig;
 
-extern SystemConfig systemConfig;
-
 #endif

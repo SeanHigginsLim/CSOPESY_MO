@@ -61,6 +61,10 @@ void verifyCommand(const std::string& input) {
     }
         
    if (input.rfind("screen -s", 0) == 0) {
+        if (input.size() <= 10) {
+            std::cout << "Please provide a process name. Usage: screen -s <name>\n";
+            return;
+        }
         std::string processName = input.substr(10);
         Process* process = scheduler.findProcess(processName);
 
@@ -74,6 +78,10 @@ void verifyCommand(const std::string& input) {
         enterProcessScreen(process);
 
     } else if (input.rfind("screen -r", 0) == 0) {
+        if (input.size() <= 10) {
+            std::cout << "Please provide a process name. Usage: screen -r <name>\n";
+            return;
+        }
         std::string processName = input.substr(10);
         Process* process = scheduler.findProcess(processName);
 
