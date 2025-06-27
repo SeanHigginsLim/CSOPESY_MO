@@ -1,5 +1,6 @@
 #include "scheduler.h"
 #include <iostream>
+#include <fstream> 
 #include <iomanip>
 #include <chrono>
 #include <thread>
@@ -139,4 +140,53 @@ void FCFSScheduler::printStatus() {
     }
 
     std::cout << "----------------------------------------------------\n";
+}
+
+void FCFSScheduler::saveStatusToFile(const std::string& path) {
+    std::lock_guard<std::mutex> lock(processMutex);
+
+    std::ofstream file(path);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open log file: " << path << std::endl;
+        return;
+    }
+
+    file << "CPU utilization: 100%\n";
+    file << "Cores used: " << coreCount << "\n";
+    file << "Cores available: 0\n";
+    file << "========================================\n";
+
+    file << "Running processes:\n";
+    bool anyRunning = false;
+    for (int i = 0; i < coreCount; i++) {
+        Process* p = runningProcesses[i];
+        if (p) {
+            anyRunning = true;
+            file << std::left << std::setw(12) << p->name
+                 << " (" << p->timestamp << ")"
+                 << "   Core: " << i
+                 << "   " << p->currentLine << " / " << p->totalLines << "\n";
+        }
+    }
+    if (!anyRunning) {
+        file << "None\n";
+    }
+
+    file << "\nFinished processes:\n";
+    if (finishedProcesses.empty()) {
+        file << "None\n";
+    } else {
+        for (auto* p : finishedProcesses) {
+            file << std::left << std::setw(12) << p->name
+                 << " (" << p->timestamp << ")"
+                 << "   Finished"
+                 << "   " << p->totalLines << " / " << p->totalLines << "\n";
+        }
+    }
+
+    file << "========================================\n";
+    file.close();
+
+    std::lock_guard<std::mutex> consoleLock(consoleMutex);
+    std::cout << "Report generated at " << path << "!\n";
 }
