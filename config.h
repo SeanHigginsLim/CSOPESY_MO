@@ -5,14 +5,17 @@
 #include <cstdint>
 
 struct SystemConfig {
-    int numCPU = 1;
-    std::string scheduler = "fcfs";
-    uint32_t quantumCycles = 0;
-    uint32_t batchProcessFreq = 1;
-    uint32_t minInstructions = 1;
-    uint32_t maxInstructions = 1;
-    uint32_t delayPerExec = 0;
-    bool initialized = false;
+    int numCPU = 2;
+    std::string scheduler = "rr";
+    int quantumCycles = 4;
+    int batchProcessFreq = 1;
+    int minInstructions = 100;
+    int maxInstructions = 100;
+    int delayPerExec = 0;
+
+    size_t maxOverallMemory = 16384;
+    size_t memoryPerFrame = 16;
+    size_t memoryPerProcess = 4096;
 };
 
 extern SystemConfig systemConfig;

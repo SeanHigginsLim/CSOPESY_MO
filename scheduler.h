@@ -1,37 +1,22 @@
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
-
-#include "process.h"
 #include <queue>
-#include <vector>
-#include <thread>
-#include <atomic>
-#include <mutex>
+#include "process.h"
+#include "memory_manager.h"
 
-class FCFSScheduler {
-private:
-    std::queue<Process*> readyQueue;
-    std::vector<Process*> runningProcesses;
-    std::vector<Process*> finishedProcesses;
-    std::vector<std::thread> workerThreads;
-    int coreCount;
-
+class Scheduler {
 public:
-    FCFSScheduler(int cores = 4);
-    void addProcess(Process* p);
-    Process* findProcess(const std::string& name);
-    void start();
+    Scheduler();
+    void addProcess(const Process& p);
+    void run();
     void stop();
-    void workerThread(int coreId);
-    void printStatus();
-    void saveStatusToFile(const std::string& path);
-    const std::vector<Process*>& getRunningProcesses() const;
-    const std::vector<Process*>& getFinishedProcesses() const;
-};
+    void printActiveProcesses();
 
-extern std::mutex consoleMutex;
-extern std::mutex processMutex;
-extern std::atomic<bool> schedulerRunning;
-extern FCFSScheduler scheduler;
+private:
+    std::queue<Process> readyQueue;
+    MemoryManager memory;
+    int cycleCount;
+    bool running;
+};
 
 #endif

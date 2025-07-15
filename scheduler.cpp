@@ -1,192 +1,49 @@
 #include "scheduler.h"
 #include <iostream>
-#include <fstream> 
-#include <iomanip>
-#include <chrono>
 #include <thread>
-#include <algorithm>
+#include <chrono>
+#include "config.h"
 
-std::mutex consoleMutex;
-std::mutex processMutex;
-std::atomic<bool> schedulerRunning(false);
-FCFSScheduler scheduler;
-std::atomic<int> cpuTickCount(0);
+Scheduler::Scheduler() : cycleCount(0), running(false) {}
 
-FCFSScheduler::FCFSScheduler(int cores) : coreCount(cores) {
-    runningProcesses.resize(coreCount, nullptr);
-}
-
-void FCFSScheduler::addProcess(Process* p) {
-    std::lock_guard<std::mutex> lock(processMutex);
+void Scheduler::addProcess(const Process& p) {
     readyQueue.push(p);
 }
 
-Process* FCFSScheduler::findProcess(const std::string& name) {
-    std::lock_guard<std::mutex> lock(processMutex);
+void Scheduler::run() {
+    running = true;
+    while (running && !readyQueue.empty()) {
+        ++cycleCount;
 
-    for (auto* p : runningProcesses) {
-        if (p && p->name == name) return p;
-    }
+        int cpuRun = std::min(systemConfig.numCPU, (int)readyQueue.size());
+        for (int i = 0; i < cpuRun; ++i) {
+            Process p = readyQueue.front();
+            readyQueue.pop();
 
-    std::queue<Process*> tempQueue = readyQueue;
-    while (!tempQueue.empty()) {
-        Process* p = tempQueue.front();
-        tempQueue.pop();
-        if (p && p->name == name) return p;
-    }
-
-    for (auto* p : finishedProcesses) {
-        if (p && p->name == name) return p;
-    }
-
-    return nullptr;
-}
-
-const std::vector<Process*>& FCFSScheduler::getRunningProcesses() const {
-    return runningProcesses;
-}
-
-const std::vector<Process*>& FCFSScheduler::getFinishedProcesses() const {
-    return finishedProcesses;
-}
-
-void FCFSScheduler::start() {
-    schedulerRunning = true;
-    for (int i = 0; i < coreCount; i++) {
-        workerThreads.emplace_back(&FCFSScheduler::workerThread, this, i);
-    }
-}
-
-void FCFSScheduler::stop() {
-    schedulerRunning = false;
-    for (auto& t : workerThreads) {
-        if (t.joinable()) t.join();
-    }
-
-    for (auto* p : finishedProcesses) {
-        delete p;
-    }
-    finishedProcesses.clear();
-}
-
-void FCFSScheduler::workerThread(int coreId) {
-    while (schedulerRunning) {
-        Process* p = nullptr;
-
-        {
-            std::lock_guard<std::mutex> lock(processMutex);
-            if (!readyQueue.empty()) {
-                p = readyQueue.front();
-                readyQueue.pop();
-                runningProcesses[coreId] = p;
-                p->coreAssigned = coreId;
-            }
-        }
-
-        if (p) {
-            while (!p->isFinished && schedulerRunning) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(150));
-                cpuTickCount++;
-
-                if (p->isSleeping()) {
-                    p->tickSleep();
+            if (!p.inMemory) {
+                if (!memory.allocate(p)) {
+                    readyQueue.push(p);
                     continue;
                 }
-
-                p->executePrint(coreId, cpuTickCount.load());
             }
 
-            {
-                std::lock_guard<std::mutex> lock(processMutex);
-                runningProcesses[coreId] = nullptr;
-                finishedProcesses.push_back(p);
+            p.remainingInstructions -= systemConfig.quantumCycles;
+            if (p.remainingInstructions <= 0) {
+                memory.release(p.pid);
+            } else {
+                readyQueue.push(p);
             }
         }
+
+        memory.printMemoryLayout(cycleCount);
+        std::this_thread::sleep_for(std::chrono::seconds(2));
     }
 }
 
-void FCFSScheduler::printStatus() {
-    std::lock_guard<std::mutex> lock(processMutex);
-    std::lock_guard<std::mutex> consoleLock(consoleMutex);
-
-    std::cout << "\n----------------------------------------------------\n";
-    std::cout << "Running processes:\n";
-
-    bool anyRunning = false;
-    for (int i = 0; i < coreCount; i++) {
-        Process* p = runningProcesses[i];
-        if (p) {
-            anyRunning = true;
-            std::cout << std::left << std::setw(12) << p->name
-                      << " (" << p->timestamp << ")"
-                      << "   Core: " << i
-                      << "   " << p->currentLine << " / " << p->totalLines << "\n";
-        }
-    }
-    if (!anyRunning) {
-        std::cout << "None\n";
-    }
-
-    std::cout << "\nFinished processes:\n";
-    if (finishedProcesses.empty()) {
-        std::cout << "None\n";
-    } else {
-        for (auto* p : finishedProcesses) {
-            std::cout << std::left << std::setw(12) << p->name
-                      << " (" << p->timestamp << ")"
-                      << "   Finished"
-                      << "   " << p->totalLines << " / " << p->totalLines << "\n";
-        }
-    }
-
-    std::cout << "----------------------------------------------------\n";
+void Scheduler::stop() {
+    running = false;
 }
 
-void FCFSScheduler::saveStatusToFile(const std::string& path) {
-    std::lock_guard<std::mutex> lock(processMutex);
-
-    std::ofstream file(path);
-    if (!file.is_open()) {
-        std::cerr << "Failed to open log file: " << path << std::endl;
-        return;
-    }
-
-    file << "CPU utilization: 100%\n";
-    file << "Cores used: " << coreCount << "\n";
-    file << "Cores available: 0\n";
-    file << "========================================\n";
-
-    file << "Running processes:\n";
-    bool anyRunning = false;
-    for (int i = 0; i < coreCount; i++) {
-        Process* p = runningProcesses[i];
-        if (p) {
-            anyRunning = true;
-            file << std::left << std::setw(12) << p->name
-                 << " (" << p->timestamp << ")"
-                 << "   Core: " << i
-                 << "   " << p->currentLine << " / " << p->totalLines << "\n";
-        }
-    }
-    if (!anyRunning) {
-        file << "None\n";
-    }
-
-    file << "\nFinished processes:\n";
-    if (finishedProcesses.empty()) {
-        file << "None\n";
-    } else {
-        for (auto* p : finishedProcesses) {
-            file << std::left << std::setw(12) << p->name
-                 << " (" << p->timestamp << ")"
-                 << "   Finished"
-                 << "   " << p->totalLines << " / " << p->totalLines << "\n";
-        }
-    }
-
-    file << "========================================\n";
-    file.close();
-
-    std::lock_guard<std::mutex> consoleLock(consoleMutex);
-    std::cout << "Report generated at " << path << "!\n";
+void Scheduler::printActiveProcesses() {
+    std::cout << "Ready queue size: " << readyQueue.size() << "\n";
 }
