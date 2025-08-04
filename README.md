@@ -1,6 +1,6 @@
 # CSOPESY M02 Multitasking OS Emulator
 
-Created by: 
+Created by: Insert Names
 Instructor: Dr. Neil Patrick Del Gallego  
 Course: CSOPESY – Operating Systems  
 Term: Term 3, A.Y. 2024-2025
