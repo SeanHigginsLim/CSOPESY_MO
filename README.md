@@ -34,3 +34,22 @@ It simulates memory management through paging, process scheduling, and memory vi
 ### Compile with g++ (Linux/macOS/WSL)
 ```bash
 g++ -std=c++11 -o os_emulator main.cpp console.cpp [add...]
+
+## Compilation
+
+Use the following command to compile the program:
+
+```
+g++ -std=c++17 main.cpp console.cpp scheduler.cpp process.cpp variable_manager.cpp config.cpp -o main.exe -pthread
+```
+
+## Running the Program
+
+```
+./main.exe   # On Linux/macOS
+main.exe     # On Windows
+```
+
+## Entry Point
+
+The program starts execution in the `CSOPESY_MO` class, located in `main.cpp`.

@@ -1,11 +1,15 @@
 #include "console.h"
 #include "scheduler.h"
 #include "process.h"
+#include "config.h"
 #include <iostream>
 #include <random>
 #include <string>
 #include <vector>
 #include <algorithm>
+
+#include <fstream>
+#include <sstream>
 
 // Global RNG
 std::random_device rd;
@@ -187,4 +191,95 @@ void Console::initializeTestProcesses() {
         scheduler.addProcess(p);
     }
     scheduler.start();
+}
+
+void Console::initializeFromConfig() {
+    std::ifstream file("config.txt");
+    if (!file.is_open()) {
+        std::cout << "Error: Could not open config.txt\n";
+        return;
+    }
+
+    std::string line;
+    while (std::getline(file, line)) {
+        if (line.empty()) continue;
+
+        std::istringstream iss(line);
+        std::string key, value;
+        iss >> key;
+        std::getline(iss, value); // get rest of line (value)
+
+        // trim leading spaces from value
+        value.erase(value.begin(), std::find_if(value.begin(), value.end(), [](int ch) {
+            return !std::isspace(ch);
+        }));
+
+        // Remove quotes if present
+        if (!value.empty() && value.front() == '"') {
+            value.erase(0, 1);
+            if (!value.empty() && value.back() == '"') {
+                value.pop_back();
+            }
+        }
+
+        // Parse each key
+        if (key == "num-cpu") {
+            int v = std::stoi(value);
+            if (v < 1 || v > 128) {
+                std::cout << "Invalid num-cpu, must be 1-128\n";
+                return;
+            }
+            systemConfig.numCPU = v;
+        } else if (key == "scheduler") {
+            std::string sched = value;
+            std::transform(sched.begin(), sched.end(), sched.begin(), ::tolower);
+            if (sched != "fcfs" && sched != "rr") {
+                std::cout << "Invalid scheduler, must be 'fcfs' or 'rr'\n";
+                return;
+            }
+            systemConfig.scheduler = sched;
+        } else if (key == "quantum-cycles") {
+            uint64_t v = std::stoull(value);
+            // range 1 to 2^32 (approx)
+            if (v < 1 || v > 4294967295ULL) {
+                std::cout << "Invalid quantum-cycles, must be 1 to 2^32\n";
+                return;
+            }
+            systemConfig.quantumCycles = (uint32_t)v;
+        } else if (key == "batch-process-freq") {
+            uint64_t v = std::stoull(value);
+            if (v < 1 || v > 4294967295ULL) {
+                std::cout << "Invalid batch-process-freq, must be 1 to 2^32\n";
+                return;
+            }
+            systemConfig.batchProcessFreq = (uint32_t)v;
+        } else if (key == "min-ins") {
+            uint64_t v = std::stoull(value);
+            if (v < 1 || v > 4294967295ULL) {
+                std::cout << "Invalid min-ins, must be 1 to 2^32\n";
+                return;
+            }
+            systemConfig.minInstructions = (uint32_t)v;
+        } else if (key == "max-ins") {
+            uint64_t v = std::stoull(value);
+            if (v < 1 || v > 4294967295ULL) {
+                std::cout << "Invalid max-ins, must be 1 to 2^32\n";
+                return;
+            }
+            systemConfig.maxInstructions = (uint32_t)v;
+        } else if (key == "delay-per-exec") {
+            uint64_t v = std::stoull(value);
+            if (v > 4294967295ULL) {
+                std::cout << "Invalid delay-per-exec, must be 0 to 2^32\n";
+                return;
+            }
+            systemConfig.delayPerExec = (uint32_t)v;
+        } else {
+            std::cout << "Unknown config parameter: " << key << "\n";
+            return;
+        }
+    }
+
+    systemConfig.initialized = true;
+    std::cout << "Configuration loaded successfully.\n";
 }

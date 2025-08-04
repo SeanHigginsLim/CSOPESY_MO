@@ -19,10 +19,14 @@ private:
 public:
     FCFSScheduler(int cores = 4);
     void addProcess(Process* p);
+    Process* findProcess(const std::string& name);
     void start();
     void stop();
     void workerThread(int coreId);
     void printStatus();
+    void saveStatusToFile(const std::string& path);
+    const std::vector<Process*>& getRunningProcesses() const;
+    const std::vector<Process*>& getFinishedProcesses() const;
 };
 
 extern std::mutex consoleMutex;
