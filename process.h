@@ -40,5 +40,4 @@ struct Process {
     void tickSleep();                       // Decrement tick
     bool isSleeping() const;                // Check if sleeping
 };
-
 #endif

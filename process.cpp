@@ -32,7 +32,7 @@ std::vector<Loop> extractNestedLoops(const std::string& cmd, const std::string& 
     std::vector<Loop> loops;
     std::string current = cmd;
 
-    std::cout << "[DEBUG] Parsing FOR loop for process: " << processName << "\n";
+    // std::cout << "[DEBUG] Parsing FOR loop for process: " << processName << "\n";
 
     for (int depth = 0; depth < 4; ++depth) {
         std::smatch match;
@@ -42,7 +42,7 @@ std::vector<Loop> extractNestedLoops(const std::string& cmd, const std::string& 
         std::string body = match[1].str();
         int repeat = std::stoi(match[2].str());
 
-        std::cout << "[DEBUG] Matched FOR at depth " << depth << " with repeat = " << repeat << "\n";
+        // std::cout << "[DEBUG] Matched FOR at depth " << depth << " with repeat = " << repeat << "\n";
 
         // Bracket balancing to find deepest nested FOR
         int forStart = body.find("FOR([");
@@ -72,11 +72,11 @@ std::vector<Loop> extractNestedLoops(const std::string& cmd, const std::string& 
             std::string outer = body.substr(0, nestedStart - 4); // Remove trailing "@@"
             std::string nested = body.substr(nestedStart, nestedEnd - nestedStart + 1);
 
-            std::cout << "[DEBUG] Level " << depth << " body (outer): " << outer << "\n";
+            // std::cout << "[DEBUG] Level " << depth << " body (outer): " << outer << "\n";
             loops.push_back({outer, repeat});
             current = nested;
         } else {
-            std::cout << "[DEBUG] Final level body: " << body << "\n";
+            // std::cout << "[DEBUG] Final level body: " << body << "\n";
             loops.push_back({body, repeat});
             break;
         }
@@ -84,11 +84,11 @@ std::vector<Loop> extractNestedLoops(const std::string& cmd, const std::string& 
 
     std::reverse(loops.begin(), loops.end());
 
-    std::cout << "[DEBUG] Detected " << loops.size() << " nested FOR loop(s)\n";
+    // std::cout << "[DEBUG] Detected " << loops.size() << " nested FOR loop(s)\n";
     for (int i = 0; i < loops.size(); ++i) {
-        std::cout << "  Loop Level " << i << " - Repeats: " << loops[i].repeats << "\n";
+        // std::cout << "  Loop Level " << i << " - Repeats: " << loops[i].repeats << "\n";
         for (auto& ins : splitInstructions(loops[i].body)) {
-            std::cout << "    [L" << i << "] " << ins << "\n";
+            // std::cout << "    [L" << i << "] " << ins << "\n";
         }
     }
 
@@ -212,18 +212,18 @@ void Process::executePrint(int core, int tick) {
             logFile.flush();
         }
     } else if (cmd.rfind("FOR([", 0) == 0) {
-        std::cout << "\n\nFOR loop structure: " << cmd << "\n\n";
-        std::cout << "[DEBUG] Parsing FOR loop for process: " << name << "\n";
+        // std::cout << "\n\nFOR loop structure: " << cmd << "\n\n";
+        // std::cout << "[DEBUG] Parsing FOR loop for process: " << name << "\n";
         std::vector<Loop> loops = extractNestedLoops(cmd, name);
-        std::cout << "[DEBUG] Detected " << loops.size() << " nested FOR loop(s)\n";
+        // std::cout << "[DEBUG] Detected " << loops.size() << " nested FOR loop(s)\n";
 
         std::vector<std::string> result;
 
         for (size_t i = 0; i < loops.size(); ++i) {
-            std::cout << "  Loop Level " << i << " - Repeats: " << loops[i].repeats << "\n";
+            // std::cout << "  Loop Level " << i << " - Repeats: " << loops[i].repeats << "\n";
             auto lines = splitInstructions(loops[i].body);
             for (const auto& line : lines) {
-                std::cout << "    [L" << i << "] " << line << "\n";
+                // std::cout << "    [L" << i << "] " << line << "\n";
             }
         }
 

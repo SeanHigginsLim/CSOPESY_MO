@@ -57,6 +57,8 @@ List of Commands:
         > screen -ls
     - scheduler-start
     - scheduler-stop
+    - process-smi
+    - vmstat
     - report-util
     - clear
     - exit
@@ -120,7 +122,7 @@ std::string generateNestedFor(int depth = 0) {
 }
 
 // Randomized instruction list generator
-std::vector<std::string> generateRandomInstructions(const std::string& processName) {
+std::vector<std::string> Console::generateRandomInstructions(const std::string& processName) {
     std::vector<std::string> instructions;
     std::vector<std::string> declaredVars;
     int count = randomInt(5, 10);
@@ -178,7 +180,7 @@ std::vector<std::string> generateRandomInstructions(const std::string& processNa
 void Console::initializeTestProcesses() {
     for (int i = 1; i <= 5; ++i) {
         std::string name = "process" + std::to_string(i);
-        Process* p = new Process(name, 100); // 100 cycles
+        Process* p = new Process(name, 10000); // 10000 cycles so you can see them executing one by one
         p->instructions = generateRandomInstructions(name);
 
         // Print instructions when created

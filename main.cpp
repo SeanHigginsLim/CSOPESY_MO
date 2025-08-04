@@ -2,8 +2,11 @@
 #include "config.h"
 #include "scheduler.h"
 #include "variable_manager.h"
+#include "memory_manager.h"
 #include "process.h"
+#include <regex>
 #include <iostream>
+#include <sstream>
 #include <string>
 
 // Helper function to enter the process screen
@@ -59,7 +62,6 @@ void verifyCommand(const std::string& input) {
         }
         return;
     }
-        
    if (input.rfind("screen -s", 0) == 0) {
         if (input.size() <= 10) {
             std::cout << "Please provide a process name. Usage: screen -s <name>\n";
@@ -76,7 +78,6 @@ void verifyCommand(const std::string& input) {
         }
 
         enterProcessScreen(process);
-
     } else if (input.rfind("screen -r", 0) == 0) {
         if (input.size() <= 10) {
             std::cout << "Please provide a process name. Usage: screen -r <name>\n";
@@ -91,19 +92,20 @@ void verifyCommand(const std::string& input) {
         }
 
         enterProcessScreen(process);
-
     } else if (input == "screen -ls") {
         scheduler.printStatus();
-
     } else if (input == "scheduler-start") {
         std::cout << "Starting scheduler test..." << std::endl;
         Console::initializeTestProcesses();
         scheduler.printStatus();
-
     } else if (input == "scheduler-stop") {
         std::cout << "Stopping scheduler..." << std::endl;
         scheduler.stop();
-        
+    } else if (input == "process-smi") {
+        memManager.printProcessSMI();
+    } 
+    else if (input == "vmstat") {
+        memManager.printVMStat();
     } else if (input == "report-util") {
     scheduler.saveStatusToFile("C:/csopesy-log.txt");
 
@@ -114,14 +116,14 @@ void verifyCommand(const std::string& input) {
         system("clear");
         #endif
         Console::printHeader();
-
-    } else if (input == "exit") {
+    } 
+    else if (input == "exit") {
         scheduler.stop();
         std::cout << "Exiting..." << std::endl;
         exit(0);
-
-    } else {
-        std::cout << "Unknown command." << std::endl;
+    } 
+    else {
+        std::cout << "[ERROR] Unknown command.\n";
     }
 }
 
