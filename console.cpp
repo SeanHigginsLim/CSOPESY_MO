@@ -55,6 +55,7 @@ List of Commands:
         > screen -s
         > screen -r
         > screen -ls
+        > screen -c <process_name> <memory_size> "<instructions>"
     - scheduler-start
     - scheduler-stop
     - process-smi
@@ -282,4 +283,62 @@ void Console::initializeFromConfig() {
 
     systemConfig.initialized = true;
     std::cout << "Configuration loaded successfully.\n";
+}
+
+void Console::handleScreenCreateCommand(const std::string& command) {
+    // Expected format: screen -c <process_name> <memory_size> "<instructions>"
+    std::istringstream iss(command);
+    std::string screen, dash_c, process_name, memory_size_str, instructions_str;
+
+    iss >> screen >> dash_c >> process_name >> memory_size_str;
+    std::getline(iss, instructions_str); // get the rest (which includes the quoted instruction string)
+
+    if (screen != "screen" || dash_c != "-c" || process_name.empty() || memory_size_str.empty() || instructions_str.empty()) {
+        std::cout << "Invalid screen -c command format.\n";
+        return;
+    }
+
+    // Trim leading/trailing spaces from instructions_str
+    instructions_str.erase(0, instructions_str.find_first_not_of(" \t"));
+    instructions_str.erase(instructions_str.find_last_not_of(" \t") + 1);
+
+    // Remove surrounding quotes
+    if (instructions_str.front() == '"' && instructions_str.back() == '"') {
+        instructions_str = instructions_str.substr(1, instructions_str.length() - 2);
+    } else {
+        std::cout << "Instructions must be in double quotes.\n";
+        return;
+    }
+
+    // Check memory size is a valid integer
+    int mem_size;
+    try {
+        mem_size = std::stoi(memory_size_str);
+    } catch (...) {
+        std::cout << "Invalid memory size.\n";
+        return;
+    }
+
+    // Split semicolon-separated instructions
+    std::vector<std::string> instructions;
+    std::stringstream ss(instructions_str);
+    std::string instr;
+    while (std::getline(ss, instr, ';')) {
+        // Trim leading/trailing spaces from each instruction
+        instr.erase(0, instr.find_first_not_of(" \t"));
+        instr.erase(instr.find_last_not_of(" \t") + 1);
+        if (!instr.empty()) instructions.push_back(instr);
+    }
+
+    if (instructions.empty() || instructions.size() > 50) {
+        std::cout << "Instruction list must be between 1 and 50 instructions.\n";
+        return;
+    }
+
+    // Create process and attach instructions
+    Process* p = new Process(process_name, mem_size);
+    p->instructions = instructions;
+    scheduler.addProcess(p);
+
+    std::cout << "Process '" << process_name << "' created with " << instructions.size() << " instructions.\n";
 }
