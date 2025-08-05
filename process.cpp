@@ -95,8 +95,8 @@ std::vector<Loop> extractNestedLoops(const std::string& cmd, const std::string& 
     return loops;
 }
 
-Process::Process(std::string n, int total)
-    : name(n), currentLine(0), totalLines(total), coreAssigned(-1), isFinished(false) {
+Process::Process(std::string n, int total, const std::vector<std::string>& instrs)
+    : name(n), currentLine(0), totalLines(total), coreAssigned(-1), isFinished(false), instructions(instrs) {
     time_t now = time(nullptr);
     tm* localTime = localtime(&now);
     std::stringstream ss;
