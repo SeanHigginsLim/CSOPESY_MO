@@ -33,6 +33,7 @@ struct Process {
     std::stack<int> forLoopCounters;
 
     Process(std::string n, int total);  // Process constructor
+    Process(std::string n, int total, const std::vector<std::string>& instrs);  // Constructor with instructions
     ~Process();                         // Prcoess destructor
 
     void executePrint(int core, int tick);  // Print into logs
@@ -40,4 +41,5 @@ struct Process {
     void tickSleep();                       // Decrement tick
     bool isSleeping() const;                // Check if sleeping
 };
+
 #endif
