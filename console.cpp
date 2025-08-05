@@ -285,6 +285,7 @@ void Console::initializeFromConfig() {
     std::cout << "Configuration loaded successfully.\n";
 }
 
+//NEW
 void Console::handleScreenCreateCommand(const std::string& command) {
     // Expected format: screen -c <process_name> <memory_size> "<instructions>"
     std::istringstream iss(command);
