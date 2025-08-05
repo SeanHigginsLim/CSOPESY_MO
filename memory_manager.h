@@ -34,6 +34,7 @@ public:
     void printProcessSMI();
     void printVMStat();
     bool isValidAccess(const std::string& processName, int pageNumber) const;
+    int getPageSize() const { return pageSize; }
 
     void initializeBackingStore();  // Clear backing store file
     

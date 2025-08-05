@@ -1,4 +1,5 @@
 #include "scheduler.h"
+#include "memory_manager.h"
 #include <iostream>
 #include <fstream> 
 #include <iomanip>
@@ -44,6 +45,37 @@ Process* FCFSScheduler::findProcess(const std::string& name) {
 
 const std::vector<Process*>& FCFSScheduler::getRunningProcesses() const {
     return runningProcesses;
+}
+
+int extractPageFromInstruction(const std::string& instr, const Process* p, int pageSize) {
+    // Check if instruction is READ or WRITE
+    // Format examples:
+    // READ var 0x1000
+    // WRITE 0x2000 42
+
+    std::istringstream iss(instr);
+    std::string opcode;
+    iss >> opcode;
+
+    if (opcode == "READ") {
+        std::string varName, addrHex;
+        iss >> varName >> addrHex;
+        if (addrHex.size() >= 3 && addrHex.substr(0,2) == "0x") {
+            int addr = std::stoi(addrHex, nullptr, 16);
+            int pageNum = (addr - p->baseAddr) / pageSize;
+            if (pageNum >= 0) return pageNum;
+        }
+    } else if (opcode == "WRITE") {
+        std::string addrHex;
+        iss >> addrHex;
+        if (addrHex.size() >= 3 && addrHex.substr(0,2) == "0x") {
+            int addr = std::stoi(addrHex, nullptr, 16);
+            int pageNum = (addr - p->baseAddr) / pageSize;
+            if (pageNum >= 0) return pageNum;
+        }
+    }
+
+    return -1; // no page access
 }
 
 const std::vector<Process*>& FCFSScheduler::getFinishedProcesses() const {
@@ -92,9 +124,15 @@ void FCFSScheduler::workerThread(int coreId) {
                     p->tickSleep();
                     continue;
                 }
-                
-                // Skip if no instructions or already finished
+
                 if (p->instructions.empty() || p->isFinished) continue;
+
+                const auto& instr = p->instructions[p->currentLine];
+                int pageNum = extractPageFromInstruction(instr, p, memManager.getPageSize());
+                if (pageNum != -1) {
+                    memManager.accessPage(p->name, pageNum);
+                }
+
                 p->executePrint(coreId, cpuTickCount.load());
             }
 
