@@ -1,10 +1,10 @@
 # CSOPESY M02 Multitasking OS Emulator
 
 Created by: 
-Herce, Dominic Marcus.
-Lim, Sean Higgins.
-Magadia, Rafael Derrick.
-Mangulabnan, Kenneth Louis.
+Herce, Dominic Marcus  
+Lim, Sean Higgins  
+Magadia, Rafael Derrick  
+Mangulabnan, Kenneth Louis  
 
 
 Instructor: Dr. Neil Patrick Del Gallego  
