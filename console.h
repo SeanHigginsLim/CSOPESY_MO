@@ -13,7 +13,7 @@ public:
 
     static std::vector<std::string> generateRandomInstructions(const std::string& processName); // Added to console.h so it can be called in main
     static void initializeFromConfig(); 
-
+    static void handleScreenCreateCommand(const std::string& command);
 };
 
 #endif
