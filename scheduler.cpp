@@ -92,7 +92,9 @@ void FCFSScheduler::workerThread(int coreId) {
                     p->tickSleep();
                     continue;
                 }
-
+                
+                // Skip if no instructions or already finished
+                if (p->instructions.empty() || p->isFinished) continue;
                 p->executePrint(coreId, cpuTickCount.load());
             }
 
