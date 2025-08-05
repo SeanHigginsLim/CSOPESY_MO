@@ -1,21 +1,34 @@
 #include "memory_manager.h"
-#include "process.h"
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
 #include <sstream>
+#include <fstream>
+#include <cstdint>
 
-MemoryManager memManager;
+MemoryManager memManager; // Global instance
 
 MemoryManager::MemoryManager(int totalMemoryBytes, int pageSize)
     : totalMemory(totalMemoryBytes), pageSize(pageSize) {
     frameCount = totalMemory / pageSize;
     frames.resize(frameCount, "EMPTY");
 
-    backingStore.open("csopesy-backing-store.txt", std::ios::out);
+    initializeBackingStore();
+
+    // Open backing store for appending page writes later
+    backingStore.open("csopesy-backing-store.txt", std::ios::app);
     if (!backingStore.is_open()) {
         std::cerr << "Failed to open backing store.\n";
     }
+}
+
+void MemoryManager::initializeBackingStore() {
+    // Clear backing store file on startup
+    std::ofstream clearFile("csopesy-backing-store.txt", std::ios::trunc);
+    if (!clearFile.is_open()) {
+        std::cerr << "Failed to clear backing store.\n";
+    }
+    clearFile.close();
 }
 
 int MemoryManager::allocateProcess(const std::string& processName, int memoryBytes) {
@@ -27,11 +40,16 @@ int MemoryManager::allocateProcess(const std::string& processName, int memoryByt
     int pageCount = (memoryBytes + pageSize - 1) / pageSize;
 
     ProcessMemory proc;
-    proc.pid = processes.size() + 1;
+    proc.pid = static_cast<int>(processes.size()) + 1;
     proc.processName = processName;
     proc.allocatedBytes = memoryBytes;
     proc.pageCount = pageCount;
     proc.pageTable.resize(pageCount);
+
+    // Initialize each page's data with zero bytes
+    for (auto& page : proc.pageTable) {
+        page.data.resize(pageSize, 0);
+    }
 
     int nextBaseAddr = 0;
     for (const auto& [_, existingProc] : processes) {
@@ -41,6 +59,7 @@ int MemoryManager::allocateProcess(const std::string& processName, int memoryByt
     proc.baseAddr = nextBaseAddr;
 
     processes[processName] = proc;
+
     std::cout << "[MEM] Allocated " << memoryBytes << " bytes (" << pageCount << " page(s)) to process " << processName << "\n";
     return proc.pid;
 }
@@ -73,7 +92,12 @@ void MemoryManager::pageIn(const std::string& processName, int pageNumber) {
     page.inMemory = true;
     page.frameIndex = frame;
 
+    // Mark as dirty because page loaded from backing store (simulate)
+    page.dirty = false;
+
+    // Write a log to backing store to indicate load (optional)
     backingStore << "[LOAD] " << processName << " page " << pageNumber << " -> frame " << frame << "\n";
+    backingStore.flush();
 }
 
 void MemoryManager::pageOut(int frameIndex) {
@@ -88,7 +112,12 @@ void MemoryManager::pageOut(int frameIndex) {
     page.inMemory = false;
     page.frameIndex = -1;
 
+    // Write page data to backing store on eviction
+    writePageToBackingStore(procName, pageIdx, page.data);
+
     backingStore << "[EVICT] " << procName << " page " << pageIdx << " from frame " << frameIndex << "\n";
+    backingStore.flush();
+
     frames[frameIndex] = "EMPTY";
 }
 
@@ -124,6 +153,22 @@ void MemoryManager::deallocateProcess(const std::string& processName) {
 
     processes.erase(processName);
     std::cout << "[MEM] Deallocated memory of " << processName << "\n";
+}
+
+void MemoryManager::writePageToBackingStore(const std::string& processName, int pageNumber, const std::vector<uint8_t>& pageData) {
+    if (!backingStore.is_open()) {
+        std::cerr << "[ERROR] Backing store file not open for writing.\n";
+        return;
+    }
+    // Format: process,page,data bytes as hex
+    backingStore << processName << "," << pageNumber << ",";
+    for (auto byte : pageData) {
+        backingStore << std::hex << std::setw(2) << std::setfill('0') << (int)byte << " ";
+    }
+    backingStore << "\n";
+    backingStore.flush();
+
+    std::cout << "[BackingStore] Written page " << pageNumber << " of " << processName << "\n";
 }
 
 void MemoryManager::printProcessSMI() {

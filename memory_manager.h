@@ -5,13 +5,15 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <cstdint>
 
 class MemoryManager {
 public:
     struct Page {
         int frameIndex = -1;     // Where it is in physical memory
         bool inMemory = false;   // Is it loaded?
-        bool dirty = false;      // If written, mark as dirty
+        bool dirty = false;      // If written, mark as dirty (for backing store writes)
+        std::vector<uint8_t> data; // Page data (simulate contents)
     };
 
     struct ProcessMemory {
@@ -33,6 +35,8 @@ public:
     void printVMStat();
     bool isValidAccess(const std::string& processName, int pageNumber) const;
 
+    void initializeBackingStore();  // Clear backing store file
+    
     const std::unordered_map<std::string, ProcessMemory>& getProcesses() const {
         return processes;
     }
@@ -52,6 +56,8 @@ private:
 
     int findFreeFrame();
     int replacePage(); // FIFO for now
+
+    void writePageToBackingStore(const std::string& processName, int pageNumber, const std::vector<uint8_t>& pageData);
 
     std::vector<std::string> pageHistory; // FIFO replacement
 };
