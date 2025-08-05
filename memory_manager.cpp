@@ -1,4 +1,5 @@
 #include "memory_manager.h"
+#include "process.h"
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
@@ -31,6 +32,13 @@ int MemoryManager::allocateProcess(const std::string& processName, int memoryByt
     proc.allocatedBytes = memoryBytes;
     proc.pageCount = pageCount;
     proc.pageTable.resize(pageCount);
+
+    int nextBaseAddr = 0;
+    for (const auto& [_, existingProc] : processes) {
+        int endAddr = existingProc.baseAddr + existingProc.allocatedBytes;
+        if (endAddr > nextBaseAddr) nextBaseAddr = endAddr;
+    }
+    proc.baseAddr = nextBaseAddr;
 
     processes[processName] = proc;
     std::cout << "[MEM] Allocated " << memoryBytes << " bytes (" << pageCount << " page(s)) to process " << processName << "\n";
@@ -158,4 +166,12 @@ void MemoryManager::printVMStat() {
     }
 
     std::cout << "============================\n";
+}
+
+bool MemoryManager::isValidAccess(const std::string& processName, int pageNumber) const {
+    auto it = processes.find(processName);
+    if (it == processes.end()) return false;
+
+    const auto& proc = it->second;
+    return (pageNumber >= 0 && pageNumber < proc.pageCount);
 }

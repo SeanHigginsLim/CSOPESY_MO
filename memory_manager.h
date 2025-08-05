@@ -19,6 +19,7 @@ public:
         std::string processName;
         int allocatedBytes;
         int pageCount;
+        int baseAddr;
         std::vector<Page> pageTable;
     };
 
@@ -30,6 +31,11 @@ public:
     void accessPage(const std::string& processName, int pageNumber);
     void printProcessSMI();
     void printVMStat();
+    bool isValidAccess(const std::string& processName, int pageNumber) const;
+
+    const std::unordered_map<std::string, ProcessMemory>& getProcesses() const {
+        return processes;
+    }
 
 private:
     int totalMemory;

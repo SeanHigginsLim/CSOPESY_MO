@@ -8,6 +8,10 @@
 
 // Header file for process.cpp
 struct Process {
+    int pid;
+    int baseAddr = -1;
+    int limitAddr = 0; 
+
     std::string name;
     int currentLine;
     int totalLines;
@@ -15,6 +19,7 @@ struct Process {
     int coreAssigned;
     bool isFinished;
     std::ofstream logFile;
+
 
     // NEW: Store log entries in memory for screen display
     std::deque<std::string> logs;      // Show recent logs

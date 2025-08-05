@@ -116,6 +116,10 @@
     "thread": "cpp",
     "typeinfo": "cpp",
     "numbers": "cpp",
-    "semaphore": "cpp"
+    "semaphore": "cpp",
+    "charconv": "cpp",
+    "format": "cpp",
+    "span": "cpp",
+    "variant": "cpp"
   }
 }

@@ -109,6 +109,12 @@ Process::Process(std::string n, int total, const std::vector<std::string>& instr
     }
 }
 
+#include "process.h"
+
+Process::Process(std::string n, int total)
+    : name(n), totalLines(total), currentLine(0), isFinished(false) {}
+
+
 Process::~Process() {
     if (logFile.is_open()) logFile.close();
 }
