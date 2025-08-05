@@ -1,5 +1,6 @@
 #include "process.h"
 #include "variable_manager.h"
+#include "memory_manager.h"
 #include <ctime>
 #include <iomanip>
 #include <sstream>
@@ -130,6 +131,10 @@ void Process::executePrint(int core, int tick) {
 
     std::string cmd = instructions[instructionPointer++];
     // std::cout << "[" << name << "] Executing: " << cmd << "\n";
+    // Memory access simulation: 4 instructions per page
+    int pageToAccess = currentLine / 4;
+    memManager.accessPage(name, pageToAccess);
+
 
     time_t now = time(nullptr);
     tm* localTime = localtime(&now);
