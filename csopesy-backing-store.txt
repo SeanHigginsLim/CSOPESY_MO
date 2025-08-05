@@ -1,4 +1,0 @@
-[LOAD] bigProc page 0 -> frame 0
-[LOAD] bigProc page 1 -> frame 1
-[LOAD] bigProc page 2 -> frame 2
-[LOAD] bigProc page 3 -> frame 3

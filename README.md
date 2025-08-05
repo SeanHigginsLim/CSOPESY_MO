@@ -1,6 +1,11 @@
 # CSOPESY M02 Multitasking OS Emulator
 
-Created by: Insert Names
+Created by: 
+Herce, Dominic Marcus
+Lim, Sean Higgins
+Magadia, Rafael Derrick
+Mangulabnan, Kenneth Louis
+
 
 Instructor: Dr. Neil Patrick Del Gallego  
 Course: CSOPESY – Operating Systems  
@@ -31,23 +36,17 @@ It simulates memory management through paging, process scheduling, and memory vi
 - C++11 or higher
 - g++ / clang++ or Visual Studio
 
-### Compile with g++ (Linux/macOS/WSL)
-```bash
-g++ -std=c++11 -o os_emulator main.cpp console.cpp [add...]
-
-## Compilation
-
 Use the following command to compile the program:
 
 ```
-g++ -std=c++17 main.cpp console.cpp scheduler.cpp process.cpp variable_manager.cpp config.cpp -o main.exe -pthread
+g++ -std=c++17 -pthread main.cpp console.cpp memory_manager.cpp process.cpp scheduler.cpp variable_manager.cpp config.cpp -o csopesy  
 ```
 
 ## Running the Program
 
 ```
-./main.exe   # On Linux/macOS
-main.exe     # On Windows
+./csopesy.exe   # On Linux/macOS
+csopesy.exe     # On Windows
 ```
 
 ## Entry Point
